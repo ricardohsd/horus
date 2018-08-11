@@ -22,6 +22,25 @@ sma.Add(66.0)
 fmt.Println(sma.Average()) #=> 44.0
 ```
 
-# Cumulative Moving Average
+# Moving Average, time window
 
-TODO
+Calculates the average of values in a given moving window.
+
+```go
+ma, err := average.NewTimeMA(10 * time.Duration, 2 * time.Duration)
+if err != nil {
+	panic(err)
+}
+
+ma.Add(11.0)
+ma.Add(22.0)
+
+time.Sleep(11 * time.Second)
+
+ma.Add(33.0)
+ma.Add(44.0)
+ma.Add(55.0)
+ma.Add(66.0)
+
+fmt.Println(ma.Average()) #=> 19.80
+```
