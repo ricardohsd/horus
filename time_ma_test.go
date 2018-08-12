@@ -16,6 +16,11 @@ func TestTimeMA_Errors(t *testing.T) {
 	if err == nil {
 		t.Errorf("Error can't be nil. Time SMA granularity must be higher than 0.")
 	}
+
+	_, err = NewTimeMA(1*time.Second, 2*time.Second)
+	if err == nil {
+		t.Errorf("Error can't be nil. Time SMA window must be a multiplier of granularity.")
+	}
 }
 
 func TestTimeMA_Add(t *testing.T) {

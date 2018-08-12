@@ -26,6 +26,10 @@ func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error)
 		return nil, fmt.Errorf("granularity must be higher than zero")
 	}
 
+	if granularity > window || window%granularity != 0 {
+		return nil, fmt.Errorf("window must be a multiplier of granularity")
+	}
+
 	t := &timeMA{
 		window:      window,
 		granularity: granularity,
