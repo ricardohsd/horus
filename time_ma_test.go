@@ -4,8 +4,6 @@ import (
 	"math"
 	"testing"
 	"time"
-
-	"github.com/jonboulle/clockwork"
 )
 
 func TestTimeMA_Errors(t *testing.T) {
@@ -21,31 +19,44 @@ func TestTimeMA_Errors(t *testing.T) {
 }
 
 func TestTimeMA_Add(t *testing.T) {
-	clock := clockwork.NewRealClock()
 	sma := &timeMA{
 		window:      10 * time.Second,
 		granularity: 2 * time.Second,
 		size:        5,
 		values:      make([]float64, 5),
-		clock:       clock,
 	}
-	go sma.cleanBuckets()
+
+	tickers := make(chan time.Time)
+
+	go sma.cleanBuckets(tickers)
+	tickers <- time.Now()
+
+	sma.Add(200.0)
+	sma.Add(200.0)
+
+	// Advance 2 positions
+	tickers <- time.Now()
+	tickers <- time.Now()
+	time.Sleep(100 * time.Millisecond)
 
 	sma.Add(10.0)
 	sma.Add(20.0)
 
-	clock.Sleep(2 * time.Second)
+	tickers <- time.Now()
+	time.Sleep(100 * time.Millisecond)
 
-	sma.Add(30.0)
+	sma.Add(25.0)
 
-	clock.Sleep(4 * time.Second)
+	tickers <- time.Now()
+	time.Sleep(100 * time.Millisecond)
 
-	sma.Add(20.0)
-	sma.Add(10.0)
+	sma.Add(5.0)
+	sma.Add(15.0)
 
-	clock.Sleep(5 * time.Second)
+	tickers <- time.Now()
+	time.Sleep(100 * time.Millisecond)
 
-	sma.Add(40.0)
+	sma.Add(25.0)
 
 	avg := math.Round(sma.Average()*100) / 100
 	total := 20.0
@@ -55,20 +66,16 @@ func TestTimeMA_Add(t *testing.T) {
 }
 
 func TestTimeMA_cleaning(t *testing.T) {
-	clock := clockwork.NewRealClock()
-	sma := &timeMA{
-		window:      10 * time.Second,
-		granularity: 2 * time.Second,
-		values:      make([]float64, 5),
-		clock:       clock,
+	sma, err := NewTimeMA(5*time.Second, 1*time.Second)
+	if err != nil {
+		t.Errorf("Error should be nil. Got %v", err)
 	}
-	go sma.cleanBuckets()
 
 	sma.Add(10.0)
 	sma.Add(20.0)
 
 	// wait for the window to be over
-	clock.Sleep(12 * time.Second)
+	time.Sleep(7 * time.Second)
 
 	avg := sma.Average()
 	if avg != 0 {

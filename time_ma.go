@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	"github.com/jonboulle/clockwork"
 )
 
 type timeMA struct {
@@ -15,7 +13,6 @@ type timeMA struct {
 	size        int
 	position    int
 	values      []float64
-	clock       clockwork.Clock
 }
 
 // NewTimeMA provides a slide window operation for a moving average in a time window.
@@ -35,20 +32,19 @@ func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error)
 		size:        int(window / granularity),
 		position:    0,
 		values:      make([]float64, int(window/granularity)),
-		clock:       clockwork.NewRealClock(),
 	}
 
-	go t.cleanBuckets()
+	ticker := time.NewTicker(t.granularity)
+
+	go t.cleanBuckets(ticker.C)
 
 	return t, nil
 }
 
-func (t *timeMA) cleanBuckets() {
-	ticker := t.clock.NewTicker(t.granularity)
-
+func (t *timeMA) cleanBuckets(ticker <-chan time.Time) {
 	for {
 		select {
-		case <-ticker.Chan():
+		case <-ticker:
 			t.Lock()
 
 			t.position++
