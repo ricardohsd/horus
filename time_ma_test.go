@@ -31,35 +31,31 @@ func TestTimeMA_Add(t *testing.T) {
 		values:      make([]float64, 5),
 	}
 
-	tickers := make(chan time.Time)
+	ticker := NewTestTicker()
 
-	go sma.cleanBuckets(tickers)
-	tickers <- time.Now()
+	go sma.cleanBuckets(ticker)
+	ticker.Tick()
 
 	sma.Add(200.0)
 	sma.Add(200.0)
 
-	// Advance 2 positions
-	tickers <- time.Now()
-	tickers <- time.Now()
-	time.Sleep(100 * time.Millisecond)
+	// Tick to advance 2 positions
+	ticker.Tick()
+	ticker.Tick()
 
 	sma.Add(10.0)
 	sma.Add(20.0)
 
-	tickers <- time.Now()
-	time.Sleep(100 * time.Millisecond)
+	ticker.Tick()
 
 	sma.Add(25.0)
 
-	tickers <- time.Now()
-	time.Sleep(100 * time.Millisecond)
+	ticker.Tick()
 
 	sma.Add(5.0)
 	sma.Add(15.0)
 
-	tickers <- time.Now()
-	time.Sleep(100 * time.Millisecond)
+	ticker.Tick()
 
 	sma.Add(25.0)
 

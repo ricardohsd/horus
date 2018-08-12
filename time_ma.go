@@ -38,17 +38,17 @@ func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error)
 		values:      make([]float64, int(window/granularity)),
 	}
 
-	ticker := time.NewTicker(t.granularity)
+	ticker := NewTicker(t.granularity)
 
-	go t.cleanBuckets(ticker.C)
+	go t.cleanBuckets(ticker)
 
 	return t, nil
 }
 
-func (t *timeMA) cleanBuckets(ticker <-chan time.Time) {
+func (t *timeMA) cleanBuckets(ticker TimeTicker) {
 	for {
 		select {
-		case <-ticker:
+		case <-ticker.Chan():
 			t.Lock()
 
 			t.position++
