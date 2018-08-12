@@ -2,6 +2,7 @@ package average
 
 import (
 	"math"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -63,6 +64,40 @@ func TestTimeMA_Add(t *testing.T) {
 	total := 20.0
 	if avg != total {
 		t.Errorf("Average doesn't match. Expected %v, got %v", total, avg)
+	}
+}
+
+func TestTimeMA_quit(t *testing.T) {
+	sma := &timeMA{
+		window:      5 * time.Second,
+		granularity: 1 * time.Second,
+		size:        5,
+		values:      make([]float64, 5),
+		quitC:       make(chan struct{}),
+	}
+
+	ticker := NewTestTicker()
+
+	go sma.cleanBuckets(ticker)
+
+	ticker.Tick()
+
+	sma.Add(200.0)
+	sma.Add(200.0)
+
+	expected := []float64{
+		0, 400, 0, 0, 0,
+	}
+	if !reflect.DeepEqual(expected, sma.values) {
+		t.Errorf("Values don't match. Expected %v, got %v", expected, sma.values)
+	}
+
+	sma.Stop()
+
+	sma.Add(500.0)
+
+	if !reflect.DeepEqual(expected, sma.values) {
+		t.Errorf("Values shouldn't be changed after stop. Expected %v, got %v", expected, sma.values)
 	}
 }
 

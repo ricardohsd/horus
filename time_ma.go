@@ -13,6 +13,8 @@ type timeMA struct {
 	size        int
 	position    int
 	values      []float64
+	quitC       chan struct{}
+	close       bool
 }
 
 // NewTimeMA provides a slide window operation for a moving average in a time window.
@@ -36,6 +38,8 @@ func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error)
 		size:        int(window / granularity),
 		position:    0,
 		values:      make([]float64, int(window/granularity)),
+		quitC:       make(chan struct{}),
+		close:       false,
 	}
 
 	ticker := NewTicker(t.granularity)
@@ -60,8 +64,19 @@ func (t *timeMA) cleanBuckets(ticker TimeTicker) {
 			t.values[t.position] = 0
 
 			t.Unlock()
+		case <-t.quitC:
+			ticker.Stop()
+			return
 		}
 	}
+}
+
+func (t *timeMA) Stop() {
+	t.Lock()
+	defer t.Unlock()
+
+	t.close = true
+	t.quitC <- struct{}{}
 }
 
 // Add adds a value to its given bucket in the time window.
@@ -69,6 +84,10 @@ func (t *timeMA) cleanBuckets(ticker TimeTicker) {
 func (t *timeMA) Add(value float64) {
 	t.Lock()
 	defer t.Unlock()
+
+	if t.close {
+		return
+	}
 
 	t.values[t.position] += value
 }
