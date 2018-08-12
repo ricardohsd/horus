@@ -13,7 +13,8 @@ type timeMA struct {
 	window      time.Duration
 	granularity time.Duration
 	size        int
-	values      map[int64]float64
+	position    int
+	values      []float64
 	clock       clockwork.Clock
 }
 
@@ -32,7 +33,8 @@ func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error)
 		window:      window,
 		granularity: granularity,
 		size:        int(window / granularity),
-		values:      make(map[int64]float64),
+		position:    0,
+		values:      make([]float64, int(window/granularity)),
 		clock:       clockwork.NewRealClock(),
 	}
 
@@ -49,13 +51,13 @@ func (t *timeMA) cleanBuckets() {
 		case <-ticker.Chan():
 			t.Lock()
 
-			lb := t.clock.Now().Add(-t.window).Unix()
+			t.position++
 
-			for k := range t.values {
-				if k < lb {
-					delete(t.values, k)
-				}
+			if t.position >= t.size {
+				t.position = 0
 			}
+
+			t.values[t.position] = 0
 
 			t.Unlock()
 		}
@@ -68,17 +70,7 @@ func (t *timeMA) Add(value float64) {
 	t.Lock()
 	defer t.Unlock()
 
-	now := t.clock.Now()
-	bucket := now.Round(t.granularity).Unix()
-
-	v, ok := t.values[bucket]
-	if !ok {
-		v = value
-	} else {
-		v = value + v
-	}
-
-	t.values[bucket] = v
+	t.values[t.position] += value
 }
 
 // Average calculates the average of buckets inside time window.
@@ -86,14 +78,10 @@ func (t *timeMA) Average() float64 {
 	t.RLock()
 	defer t.RUnlock()
 
-	lb := t.clock.Now().Add(-t.window).Unix()
-
 	total := float64(0)
 
-	for k, v := range t.values {
-		if k >= lb {
-			total = total + v
-		}
+	for _, v := range t.values {
+		total = total + v
 	}
 
 	if total == 0 {
