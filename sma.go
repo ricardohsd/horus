@@ -33,3 +33,27 @@ func (s *sma) Average() float64 {
 
 	return avg / float64(s.window)
 }
+
+func (s *sma) Max() float64 {
+	max := s.values[0]
+
+	for _, v := range s.values {
+		if v > max {
+			max = v
+		}
+	}
+
+	return max
+}
+
+func (s *sma) Min() float64 {
+	min := s.values[0]
+
+	for _, v := range s.values {
+		if v <= min {
+			min = v
+		}
+	}
+
+	return min
+}

@@ -1,7 +1,6 @@
 package horus
 
 import (
-	"math"
 	"testing"
 	"time"
 
@@ -19,50 +18,7 @@ func TestRollingWindow_Errors(t *testing.T) {
 	assert.NotNil(t, err, "Error can't be nil. Window must be a multiplier of granularity.")
 }
 
-func TestRollingWindow_Add(t *testing.T) {
-	rw := &rollingWindow{
-		window:      10 * time.Second,
-		granularity: 2 * time.Second,
-		size:        5,
-		values:      make([]float64, 5),
-		counters:    make([]int, 5),
-	}
-
-	ticker := NewTestTicker()
-
-	go rw.cleanBuckets(ticker)
-	ticker.Tick()
-
-	rw.Add(200.0)
-	rw.Add(200.0)
-
-	// Tick to advance 2 positions
-	ticker.Tick()
-	ticker.Tick()
-
-	rw.Add(10.0)
-	rw.Add(20.0)
-
-	ticker.Tick()
-
-	rw.Add(25.0)
-
-	ticker.Tick()
-
-	rw.Add(5.0)
-	rw.Add(15.0)
-
-	ticker.Tick()
-
-	rw.Add(25.0)
-
-	avg := math.Round(rw.Average()*100) / 100
-	assert.Equal(t, 20.0, avg)
-
-	assert.Equal(t, 6, rw.Count())
-}
-
-func TestRollingWindow_MaxMin(t *testing.T) {
+func TestRollingWindow(t *testing.T) {
 	rw := &rollingWindow{
 		window:      10 * time.Second,
 		granularity: 2 * time.Second,
@@ -113,6 +69,17 @@ func TestRollingWindow_MaxMin(t *testing.T) {
 	assert.Equal(t, -25.0, rw.Min())
 
 	assert.Equal(t, 7, rw.Count())
+}
+
+func TestRollingWindow_MaxMin(t *testing.T) {
+	rw := &rollingWindow{
+		values: []float64{
+			0, 10, -20, 150, 0, 30,
+		},
+	}
+
+	assert.Equal(t, 150.0, rw.Max())
+	assert.Equal(t, -20.0, rw.Min())
 }
 
 func TestRollingWindow_quit(t *testing.T) {

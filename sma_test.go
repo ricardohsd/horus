@@ -2,43 +2,38 @@ package horus
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSMA_ZeroWindow(t *testing.T) {
 	_, err := NewSMA(0)
-	if err == nil {
-		t.Errorf("Error shouldn't be nil. Average window must be higher than zero.")
-	}
+	assert.NotNil(t, err, "Error shouldn't be nil. Average window must be higher than zero.")
 }
 
 func TestSMA(t *testing.T) {
 	sma, err := NewSMA(5)
-	if err != nil {
-		t.Errorf("Error should be nil. Got %v", err)
-	}
+	assert.Nil(t, err)
 
 	sma.Add(10.0)
-	sma.Add(10.0)
-	sma.Add(10.0)
-	sma.Add(10.0)
-	sma.Add(10.0)
+	sma.Add(5.0)
+	sma.Add(15.0)
+	sma.Add(16.0)
+	sma.Add(4.0)
 
-	avg := sma.Average()
-	if avg != 10.0 {
-		t.Errorf("Average doesn't match. Expected %v, got %v", 10.0, avg)
-	}
+	assert.Equal(t, 10.0, sma.Average())
+	assert.Equal(t, 4.0, sma.Min())
+	assert.Equal(t, 16.0, sma.Max())
 
 	sma.Add(20.0)
 
-	avg = sma.Average()
-	if avg != 12.0 {
-		t.Errorf("Average doesn't match. Expected %v, got %v", 12.0, avg)
-	}
+	assert.Equal(t, 12.0, sma.Average())
+	assert.Equal(t, 4.0, sma.Min())
+	assert.Equal(t, 20.0, sma.Max())
 
 	sma.Add(-13.0)
 
-	avg = sma.Average()
-	if avg != 7.4 {
-		t.Errorf("Average doesn't match. Expected %v, got %v", 7.4, avg)
-	}
+	assert.Equal(t, 8.4, sma.Average())
+	assert.Equal(t, -13.0, sma.Min())
+	assert.Equal(t, 20.0, sma.Max())
 }
