@@ -21,10 +21,10 @@ func TestRollingWindow_Errors(t *testing.T) {
 func TestRollingWindow(t *testing.T) {
 	rw := &rollingWindow{
 		window:      10 * time.Second,
-		granularity: 2 * time.Second,
-		size:        5,
-		values:      make([]float64, 5),
-		counters:    make([]int, 5),
+		granularity: time.Second,
+		size:        10,
+		values:      make([]float64, 10),
+		counters:    make([]int, 10),
 	}
 
 	ticker := NewTestTicker()
@@ -40,10 +40,12 @@ func TestRollingWindow(t *testing.T) {
 
 	assert.Equal(t, 400.0, rw.Max())
 	assert.Equal(t, 0.0, rw.Min())
+	assert.Equal(t, 40.0, rw.Average())
 
-	// Tick to advance 2 positions
-	ticker.Tick()
-	ticker.Tick()
+	// Tick to advance 6 positions
+	for i := 0; i < 6; i++ {
+		ticker.Tick()
+	}
 
 	rw.Add(10.0)
 	rw.Add(20.0)
@@ -67,7 +69,7 @@ func TestRollingWindow(t *testing.T) {
 
 	assert.Equal(t, 80.0, rw.Max())
 	assert.Equal(t, -25.0, rw.Min())
-
+	assert.Equal(t, 13.0, rw.Average())
 	assert.Equal(t, 7, rw.Count())
 }
 

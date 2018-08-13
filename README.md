@@ -27,7 +27,7 @@ fmt.Println(sw.Max()) #=> 66.0
 # Time Rolling window
 
 ```go
-rw, err := horus.NewRWindow(10*time.Second, 2*time.Second)
+rw, err := horus.NewRWindow(10*time.Second, time.Second)
 if err != nil {
 	panic(err)
 }
@@ -35,7 +35,7 @@ if err != nil {
 rw.Add(11.0)
 rw.Add(22.0)
 
-time.Sleep(11 * time.Second)
+time.Sleep(12 * time.Second)
 
 rw.Add(33.0)
 rw.Add(44.0)
@@ -45,7 +45,7 @@ rw.Add(66.0)
 
 rw.Stop()
 
-fmt.Println(rw.Average()) #=> 39.6
+fmt.Println(rw.Average()) #=> 19.8
 fmt.Println(rw.Max()) #=> 121
 fmt.Println(rw.Min()) #=> 0
 ```
