@@ -7,25 +7,25 @@ import (
 	"time"
 )
 
-func TestTimeMA_Errors(t *testing.T) {
-	_, err := NewTimeMA(0*time.Second, 1*time.Second)
+func TestRollingWindow_Errors(t *testing.T) {
+	_, err := NewRWindow(0*time.Second, 1*time.Second)
 	if err == nil {
-		t.Errorf("Error can't be nil. Time SMA window must be higher than 0.")
+		t.Errorf("Error can't be nil. Wndow must be higher than 0.")
 	}
 
-	_, err = NewTimeMA(1*time.Second, 0*time.Second)
+	_, err = NewRWindow(1*time.Second, 0*time.Second)
 	if err == nil {
-		t.Errorf("Error can't be nil. Time SMA granularity must be higher than 0.")
+		t.Errorf("Error can't be nil. Granularity must be higher than 0.")
 	}
 
-	_, err = NewTimeMA(1*time.Second, 2*time.Second)
+	_, err = NewRWindow(1*time.Second, 2*time.Second)
 	if err == nil {
-		t.Errorf("Error can't be nil. Time SMA window must be a multiplier of granularity.")
+		t.Errorf("Error can't be nil. Window must be a multiplier of granularity.")
 	}
 }
 
-func TestTimeMA_Add(t *testing.T) {
-	sma := &timeMA{
+func TestRollingWindow_Add(t *testing.T) {
+	rw := &rollingWindow{
 		window:      10 * time.Second,
 		granularity: 2 * time.Second,
 		size:        5,
@@ -34,41 +34,41 @@ func TestTimeMA_Add(t *testing.T) {
 
 	ticker := NewTestTicker()
 
-	go sma.cleanBuckets(ticker)
+	go rw.cleanBuckets(ticker)
 	ticker.Tick()
 
-	sma.Add(200.0)
-	sma.Add(200.0)
+	rw.Add(200.0)
+	rw.Add(200.0)
 
 	// Tick to advance 2 positions
 	ticker.Tick()
 	ticker.Tick()
 
-	sma.Add(10.0)
-	sma.Add(20.0)
+	rw.Add(10.0)
+	rw.Add(20.0)
 
 	ticker.Tick()
 
-	sma.Add(25.0)
+	rw.Add(25.0)
 
 	ticker.Tick()
 
-	sma.Add(5.0)
-	sma.Add(15.0)
+	rw.Add(5.0)
+	rw.Add(15.0)
 
 	ticker.Tick()
 
-	sma.Add(25.0)
+	rw.Add(25.0)
 
-	avg := math.Round(sma.Average()*100) / 100
+	avg := math.Round(rw.Average()*100) / 100
 	total := 20.0
 	if avg != total {
 		t.Errorf("Average doesn't match. Expected %v, got %v", total, avg)
 	}
 }
 
-func TestTimeMA_Max(t *testing.T) {
-	sma := &timeMA{
+func TestRollingWindow_Max(t *testing.T) {
+	rw := &rollingWindow{
 		window:      10 * time.Second,
 		granularity: 2 * time.Second,
 		size:        5,
@@ -77,19 +77,19 @@ func TestTimeMA_Max(t *testing.T) {
 
 	ticker := NewTestTicker()
 
-	go sma.cleanBuckets(ticker)
+	go rw.cleanBuckets(ticker)
 	ticker.Tick()
 
-	max := sma.Max()
+	max := rw.Max()
 	expected := 0.0
 	if max != expected {
 		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
 	}
 
-	sma.Add(200.0)
-	sma.Add(200.0)
+	rw.Add(200.0)
+	rw.Add(200.0)
 
-	max = sma.Max()
+	max = rw.Max()
 	expected = 400.0
 	if max != expected {
 		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
@@ -99,31 +99,31 @@ func TestTimeMA_Max(t *testing.T) {
 	ticker.Tick()
 	ticker.Tick()
 
-	sma.Add(10.0)
-	sma.Add(20.0)
+	rw.Add(10.0)
+	rw.Add(20.0)
 
 	ticker.Tick()
 
-	sma.Add(25.0)
+	rw.Add(25.0)
 
 	ticker.Tick()
 
-	sma.Add(5.0)
-	sma.Add(15.0)
+	rw.Add(5.0)
+	rw.Add(15.0)
 
 	ticker.Tick()
 
-	sma.Add(25.0)
+	rw.Add(25.0)
 
-	max = sma.Max()
+	max = rw.Max()
 	expected = 30.0
 	if max != expected {
 		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
 	}
 }
 
-func TestTimeMA_quit(t *testing.T) {
-	sma := &timeMA{
+func TestRollingWindow_quit(t *testing.T) {
+	rw := &rollingWindow{
 		window:      5 * time.Second,
 		granularity: 1 * time.Second,
 		size:        5,
@@ -133,42 +133,42 @@ func TestTimeMA_quit(t *testing.T) {
 
 	ticker := NewTestTicker()
 
-	go sma.cleanBuckets(ticker)
+	go rw.cleanBuckets(ticker)
 
 	ticker.Tick()
 
-	sma.Add(200.0)
-	sma.Add(200.0)
+	rw.Add(200.0)
+	rw.Add(200.0)
 
 	expected := []float64{
 		0, 400, 0, 0, 0,
 	}
-	if !reflect.DeepEqual(expected, sma.values) {
-		t.Errorf("Values don't match. Expected %v, got %v", expected, sma.values)
+	if !reflect.DeepEqual(expected, rw.values) {
+		t.Errorf("Values don't match. Expected %v, got %v", expected, rw.values)
 	}
 
-	sma.Stop()
+	rw.Stop()
 
-	sma.Add(500.0)
+	rw.Add(500.0)
 
-	if !reflect.DeepEqual(expected, sma.values) {
-		t.Errorf("Values shouldn't be changed after stop. Expected %v, got %v", expected, sma.values)
+	if !reflect.DeepEqual(expected, rw.values) {
+		t.Errorf("Values shouldn't be changed after stop. Expected %v, got %v", expected, rw.values)
 	}
 }
 
-func TestTimeMA_cleaning(t *testing.T) {
-	sma, err := NewTimeMA(5*time.Second, 1*time.Second)
+func TestRollingWindow_cleaning(t *testing.T) {
+	rw, err := NewRWindow(5*time.Second, 1*time.Second)
 	if err != nil {
 		t.Errorf("Error should be nil. Got %v", err)
 	}
 
-	sma.Add(10.0)
-	sma.Add(20.0)
+	rw.Add(10.0)
+	rw.Add(20.0)
 
 	// wait for the window to be over
 	time.Sleep(7 * time.Second)
 
-	avg := sma.Average()
+	avg := rw.Average()
 	if avg != 0 {
 		t.Errorf("Average should be 0, got %v", avg)
 	}

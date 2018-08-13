@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type timeMA struct {
+type rollingWindow struct {
 	sync.RWMutex
 	window      time.Duration
 	granularity time.Duration
@@ -17,9 +17,9 @@ type timeMA struct {
 	close       bool
 }
 
-// NewTimeMA provides a slide window operation for a moving average in a time window.
+// NewRWindow provides a slide window operation for a moving average in a rolling window.
 // The given window must be in a valid time.Duration higher than 0.
-func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error) {
+func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow, error) {
 	if window == 0 {
 		return nil, fmt.Errorf("window must be higher than 0")
 	}
@@ -32,7 +32,7 @@ func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error)
 		return nil, fmt.Errorf("window must be a multiplier of granularity")
 	}
 
-	t := &timeMA{
+	t := &rollingWindow{
 		window:      window,
 		granularity: granularity,
 		size:        int(window / granularity),
@@ -49,7 +49,7 @@ func NewTimeMA(window time.Duration, granularity time.Duration) (*timeMA, error)
 	return t, nil
 }
 
-func (t *timeMA) cleanBuckets(ticker TimeTicker) {
+func (t *rollingWindow) cleanBuckets(ticker TimeTicker) {
 	for {
 		select {
 		case <-ticker.Chan():
@@ -71,7 +71,7 @@ func (t *timeMA) cleanBuckets(ticker TimeTicker) {
 	}
 }
 
-func (t *timeMA) Stop() {
+func (t *rollingWindow) Stop() {
 	t.Lock()
 	defer t.Unlock()
 
@@ -79,9 +79,9 @@ func (t *timeMA) Stop() {
 	t.quitC <- struct{}{}
 }
 
-// Add adds a value to its given position in the time window.
+// Add adds a value to its given position in the rolling window.
 // The given value is incremented with the position's value.
-func (t *timeMA) Add(value float64) {
+func (t *rollingWindow) Add(value float64) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -92,8 +92,8 @@ func (t *timeMA) Add(value float64) {
 	t.values[t.position] += value
 }
 
-// Average calculates the average inside time window.
-func (t *timeMA) Average() float64 {
+// Average calculates the average inside rolling window.
+func (t *rollingWindow) Average() float64 {
 	t.RLock()
 	defer t.RUnlock()
 
@@ -110,8 +110,8 @@ func (t *timeMA) Average() float64 {
 	return total / float64(t.size)
 }
 
-// Max returns the max value in the given time window.
-func (t *timeMA) Max() float64 {
+// Max returns the max value in the given rolling window.
+func (t *rollingWindow) Max() float64 {
 	t.RLock()
 	defer t.RUnlock()
 

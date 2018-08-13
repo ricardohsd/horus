@@ -2,7 +2,7 @@ package horus
 
 import "time"
 
-// TimeTicker defines a ticker interface for average counters
+// TimeTicker defines a ticker interface
 type TimeTicker interface {
 	Stop()
 	Chan() <-chan time.Time
