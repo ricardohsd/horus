@@ -33,13 +33,15 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 		return nil, fmt.Errorf("window must be a multiplier of granularity")
 	}
 
+	size := int(window / granularity)
+
 	t := &rollingWindow{
 		window:      window,
 		granularity: granularity,
-		size:        int(window / granularity),
+		size:        size,
 		position:    0,
-		values:      make([]float64, int(window/granularity)),
-		counters:    make([]int, int(window/granularity)),
+		values:      make([]float64, size),
+		counters:    make([]int, size),
 		quitC:       make(chan struct{}),
 		close:       false,
 	}
