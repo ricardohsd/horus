@@ -13,6 +13,7 @@ type rollingWindow struct {
 	size        int
 	position    int
 	values      []float64
+	counters    []int
 	quitC       chan struct{}
 	close       bool
 }
@@ -38,6 +39,7 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 		size:        int(window / granularity),
 		position:    0,
 		values:      make([]float64, int(window/granularity)),
+		counters:    make([]int, int(window/granularity)),
 		quitC:       make(chan struct{}),
 		close:       false,
 	}
@@ -49,57 +51,73 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 	return t, nil
 }
 
-func (t *rollingWindow) cleanBuckets(ticker TimeTicker) {
+func (r *rollingWindow) cleanBuckets(ticker TimeTicker) {
 	for {
 		select {
 		case <-ticker.Chan():
-			t.Lock()
+			r.Lock()
 
-			t.position++
+			r.position++
 
-			if t.position >= t.size {
-				t.position = 0
+			if r.position >= r.size {
+				r.position = 0
 			}
 
-			t.values[t.position] = 0
+			r.values[r.position] = 0
+			r.counters[r.position] = 0
 
-			t.Unlock()
-		case <-t.quitC:
+			r.Unlock()
+		case <-r.quitC:
 			ticker.Stop()
 			return
 		}
 	}
 }
 
-func (t *rollingWindow) Stop() {
-	t.Lock()
-	defer t.Unlock()
+func (r *rollingWindow) Stop() {
+	r.Lock()
+	defer r.Unlock()
 
-	t.close = true
-	t.quitC <- struct{}{}
+	r.close = true
+	r.quitC <- struct{}{}
 }
 
 // Add adds a value to its given position in the rolling window.
 // The given value is incremented with the position's value.
-func (t *rollingWindow) Add(value float64) {
-	t.Lock()
-	defer t.Unlock()
+func (r *rollingWindow) Add(value float64) {
+	r.Lock()
+	defer r.Unlock()
 
-	if t.close {
+	if r.close {
 		return
 	}
 
-	t.values[t.position] += value
+	r.counters[r.position]++
+	r.values[r.position] += value
+}
+
+// Count returns the total number of transactions in the rolling window
+func (r *rollingWindow) Count() int {
+	r.RLock()
+	defer r.RUnlock()
+
+	total := 0
+
+	for _, v := range r.counters {
+		total += v
+	}
+
+	return total
 }
 
 // Average calculates the average inside rolling window.
-func (t *rollingWindow) Average() float64 {
-	t.RLock()
-	defer t.RUnlock()
+func (r *rollingWindow) Average() float64 {
+	r.RLock()
+	defer r.RUnlock()
 
 	total := 0.0
 
-	for _, v := range t.values {
+	for _, v := range r.values {
 		total = total + v
 	}
 
@@ -107,17 +125,17 @@ func (t *rollingWindow) Average() float64 {
 		return total
 	}
 
-	return total / float64(t.size)
+	return total / float64(r.size)
 }
 
 // Max returns the max value in the given rolling window.
-func (t *rollingWindow) Max() float64 {
-	t.RLock()
-	defer t.RUnlock()
+func (r *rollingWindow) Max() float64 {
+	r.RLock()
+	defer r.RUnlock()
 
-	max := t.values[0]
+	max := r.values[0]
 
-	for _, v := range t.values {
+	for _, v := range r.values {
 		if v > max {
 			max = v
 		}
@@ -127,13 +145,13 @@ func (t *rollingWindow) Max() float64 {
 }
 
 // Min returns the min value in the given rolling window.
-func (t *rollingWindow) Min() float64 {
-	t.RLock()
-	defer t.RUnlock()
+func (r *rollingWindow) Min() float64 {
+	r.RLock()
+	defer r.RUnlock()
 
-	min := t.values[0]
+	min := r.values[0]
 
-	for _, v := range t.values {
+	for _, v := range r.values {
 		if v <= min {
 			min = v
 		}

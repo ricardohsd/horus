@@ -30,6 +30,7 @@ func TestRollingWindow_Add(t *testing.T) {
 		granularity: 2 * time.Second,
 		size:        5,
 		values:      make([]float64, 5),
+		counters:    make([]int, 5),
 	}
 
 	ticker := NewTestTicker()
@@ -73,6 +74,7 @@ func TestRollingWindow_MaxMin(t *testing.T) {
 		granularity: 2 * time.Second,
 		size:        5,
 		values:      make([]float64, 5),
+		counters:    make([]int, 5),
 	}
 
 	ticker := NewTestTicker()
@@ -142,6 +144,12 @@ func TestRollingWindow_MaxMin(t *testing.T) {
 	if min != expected {
 		t.Errorf("Min doesn't match. Expected %v, got %v", expected, min)
 	}
+
+	total := rw.Count()
+	count := 7
+	if total != count {
+		t.Errorf("Count doesn't match. Expected %v, got %v", count, total)
+	}
 }
 
 func TestRollingWindow_quit(t *testing.T) {
@@ -150,6 +158,7 @@ func TestRollingWindow_quit(t *testing.T) {
 		granularity: 1 * time.Second,
 		size:        5,
 		values:      make([]float64, 5),
+		counters:    make([]int, 5),
 		quitC:       make(chan struct{}),
 	}
 
