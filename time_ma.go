@@ -79,8 +79,8 @@ func (t *timeMA) Stop() {
 	t.quitC <- struct{}{}
 }
 
-// Add adds a value to its given bucket in the time window.
-// Each value is added as a separate value in the internal storage.
+// Add adds a value to its given position in the time window.
+// The given value is incremented with the position's value.
 func (t *timeMA) Add(value float64) {
 	t.Lock()
 	defer t.Unlock()
@@ -92,12 +92,12 @@ func (t *timeMA) Add(value float64) {
 	t.values[t.position] += value
 }
 
-// Average calculates the average of buckets inside time window.
+// Average calculates the average inside time window.
 func (t *timeMA) Average() float64 {
 	t.RLock()
 	defer t.RUnlock()
 
-	total := float64(0)
+	total := 0.0
 
 	for _, v := range t.values {
 		total = total + v
@@ -108,4 +108,20 @@ func (t *timeMA) Average() float64 {
 	}
 
 	return total / float64(t.size)
+}
+
+// Max returns the max value in the given time window.
+func (t *timeMA) Max() float64 {
+	t.RLock()
+	defer t.RUnlock()
+
+	max := 0.0
+
+	for _, v := range t.values {
+		if v > max {
+			max = v
+		}
+	}
+
+	return max
 }

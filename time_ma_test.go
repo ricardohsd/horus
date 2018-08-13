@@ -67,6 +67,61 @@ func TestTimeMA_Add(t *testing.T) {
 	}
 }
 
+func TestTimeMA_Max(t *testing.T) {
+	sma := &timeMA{
+		window:      10 * time.Second,
+		granularity: 2 * time.Second,
+		size:        5,
+		values:      make([]float64, 5),
+	}
+
+	ticker := NewTestTicker()
+
+	go sma.cleanBuckets(ticker)
+	ticker.Tick()
+
+	max := sma.Max()
+	expected := 0.0
+	if max != expected {
+		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
+	}
+
+	sma.Add(200.0)
+	sma.Add(200.0)
+
+	max = sma.Max()
+	expected = 400.0
+	if max != expected {
+		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
+	}
+
+	// Tick to advance 2 positions
+	ticker.Tick()
+	ticker.Tick()
+
+	sma.Add(10.0)
+	sma.Add(20.0)
+
+	ticker.Tick()
+
+	sma.Add(25.0)
+
+	ticker.Tick()
+
+	sma.Add(5.0)
+	sma.Add(15.0)
+
+	ticker.Tick()
+
+	sma.Add(25.0)
+
+	max = sma.Max()
+	expected = 30.0
+	if max != expected {
+		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
+	}
+}
+
 func TestTimeMA_quit(t *testing.T) {
 	sma := &timeMA{
 		window:      5 * time.Second,
