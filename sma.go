@@ -1,4 +1,4 @@
-package average
+package horus
 
 import "fmt"
 
