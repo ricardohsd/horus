@@ -1,28 +1,30 @@
 # Horus
 
-This package implements statistics in a fixed or rolling window.
+This package implements statistics in a fixed or time rolling window.
 
-# Simple Moving Average
+# Simple Moving window
 
 Accepts an int higher than zero as window size.
 
 ```go
-sma, err := horus.NewSMA(5)
+sw, err := horus.NewSWindow(5)
 if err != nil {
 	panic(err)
 }
 
-sma.Add(11.0)
-sma.Add(22.0)
-sma.Add(33.0)
-sma.Add(44.0)
-sma.Add(55.0)
-sma.Add(66.0)
+sw.Add(11.0)
+sw.Add(22.0)
+sw.Add(33.0)
+sw.Add(44.0)
+sw.Add(55.0)
+sw.Add(66.0)
 
-fmt.Println(sma.Average()) #=> 44.0
+fmt.Println(sw.Average()) #=> 44.0
+fmt.Println(sw.Min()) #=> 22.0
+fmt.Println(sw.Max()) #=> 66.0
 ```
 
-# Rolling window
+# Time Rolling window
 
 ```go
 rw, err := horus.NewRWindow(10*time.Second, 2*time.Second)
