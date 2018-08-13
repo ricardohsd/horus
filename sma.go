@@ -25,9 +25,11 @@ func (s *sma) Add(value float64) {
 }
 
 func (s *sma) Average() float64 {
-	avg := float64(0)
-	for i := s.window; i > 0; i-- {
-		avg = s.values[i-1] + avg
+	avg := 0.0
+
+	for _, v := range s.values {
+		avg = avg + v
 	}
+
 	return avg / float64(s.window)
 }
