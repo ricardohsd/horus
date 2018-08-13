@@ -115,7 +115,7 @@ func (t *rollingWindow) Max() float64 {
 	t.RLock()
 	defer t.RUnlock()
 
-	max := 0.0
+	max := t.values[0]
 
 	for _, v := range t.values {
 		if v > max {
@@ -124,4 +124,20 @@ func (t *rollingWindow) Max() float64 {
 	}
 
 	return max
+}
+
+// Min returns the min value in the given rolling window.
+func (t *rollingWindow) Min() float64 {
+	t.RLock()
+	defer t.RUnlock()
+
+	min := t.values[0]
+
+	for _, v := range t.values {
+		if v <= min {
+			min = v
+		}
+	}
+
+	return min
 }

@@ -67,7 +67,7 @@ func TestRollingWindow_Add(t *testing.T) {
 	}
 }
 
-func TestRollingWindow_Max(t *testing.T) {
+func TestRollingWindow_MaxMin(t *testing.T) {
 	rw := &rollingWindow{
 		window:      10 * time.Second,
 		granularity: 2 * time.Second,
@@ -86,6 +86,12 @@ func TestRollingWindow_Max(t *testing.T) {
 		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
 	}
 
+	min := rw.Min()
+	expected = 0.0
+	if min != expected {
+		t.Errorf("Min doesn't match. Expected %v, got %v", expected, min)
+	}
+
 	rw.Add(200.0)
 	rw.Add(200.0)
 
@@ -93,6 +99,12 @@ func TestRollingWindow_Max(t *testing.T) {
 	expected = 400.0
 	if max != expected {
 		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
+	}
+
+	min = rw.Min()
+	expected = 0.0
+	if min != expected {
+		t.Errorf("Min doesn't match. Expected %v, got %v", expected, min)
 	}
 
 	// Tick to advance 2 positions
@@ -113,12 +125,22 @@ func TestRollingWindow_Max(t *testing.T) {
 
 	ticker.Tick()
 
-	rw.Add(25.0)
+	rw.Add(-25.0)
+
+	ticker.Tick()
+
+	rw.Add(80.0)
 
 	max = rw.Max()
-	expected = 30.0
+	expected = 80.0
 	if max != expected {
 		t.Errorf("Max doesn't match. Expected %v, got %v", expected, max)
+	}
+
+	min = rw.Min()
+	expected = -25.0
+	if min != expected {
+		t.Errorf("Min doesn't match. Expected %v, got %v", expected, min)
 	}
 }
 
