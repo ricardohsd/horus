@@ -41,7 +41,11 @@ func (t *TestTicker) Chan() <-chan time.Time {
 func (t *TestTicker) Stop() {
 }
 
-func (t *TestTicker) Tick() {
-	t.c <- time.Now()
+func (t *TestTicker) Tick() time.Time {
+	now := time.Now()
+
+	t.c <- now
 	time.Sleep(100 * time.Millisecond)
+
+	return now
 }

@@ -24,7 +24,7 @@ func TestRollingWindow(t *testing.T) {
 		granularity: time.Second,
 		size:        10,
 		values:      make([]float64, 10),
-		counters:    make([]int, 10),
+		counters:    make([]int64, 10),
 	}
 
 	ticker := NewTestTicker()
@@ -70,9 +70,51 @@ func TestRollingWindow(t *testing.T) {
 	assert.Equal(t, 80.0, rw.Max())
 	assert.Equal(t, -25.0, rw.Min())
 	assert.Equal(t, 13.0, rw.Average())
-	assert.Equal(t, 7, rw.Count())
+	assert.Equal(t, int64(7), rw.Count())
 }
 
+func TestRollingWindow_WithTime(t *testing.T) {
+	rw := &rollingWindow{
+		window:      10 * time.Second,
+		granularity: time.Second,
+		size:        10,
+		values:      make([]float64, 10),
+		counters:    make([]int64, 10),
+	}
+
+	ticker := NewTestTicker()
+
+	go rw.cleanBuckets(ticker)
+	now := ticker.Tick()
+
+	assert.Equal(t, 0.0, rw.Max())
+	assert.Equal(t, 0.0, rw.Min())
+
+	rw.AddWithTime(200.0, now)
+	rw.AddWithTime(200.0, now)
+
+	assert.Equal(t, 400.0, rw.Max())
+	assert.Equal(t, 0.0, rw.Min())
+	assert.Equal(t, 40.0, rw.Average())
+
+	rw.AddWithTime(150.0, now.Add(-5*time.Second))
+
+	assert.Equal(t, 400.0, rw.Max())
+	assert.Equal(t, 0.0, rw.Min())
+	assert.Equal(t, 55.0, rw.Average())
+
+	rw.AddWithTime(10000.0, now.Add(-15*time.Second))
+
+	assert.Equal(t, 400.0, rw.Max())
+	assert.Equal(t, 0.0, rw.Min())
+	assert.Equal(t, 55.0, rw.Average())
+
+	rw.AddWithTime(-10.0, now.Add(-10*time.Second))
+
+	assert.Equal(t, 390.0, rw.Max())
+	assert.Equal(t, 0.0, rw.Min())
+	assert.Equal(t, 54.0, rw.Average())
+}
 func TestRollingWindow_MaxMin(t *testing.T) {
 	rw := &rollingWindow{
 		values: []float64{
@@ -90,7 +132,7 @@ func TestRollingWindow_quit(t *testing.T) {
 		granularity: 1 * time.Second,
 		size:        5,
 		values:      make([]float64, 5),
-		counters:    make([]int, 5),
+		counters:    make([]int64, 5),
 		quitC:       make(chan struct{}),
 	}
 

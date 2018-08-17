@@ -10,10 +10,11 @@ type rollingWindow struct {
 	sync.RWMutex
 	window      time.Duration
 	granularity time.Duration
-	size        int
-	position    int
+	size        int64
+	position    int64
+	now         time.Time
 	values      []float64
-	counters    []int
+	counters    []int64
 	quitC       chan struct{}
 	close       bool
 }
@@ -33,7 +34,7 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 		return nil, fmt.Errorf("window must be a multiplier of granularity")
 	}
 
-	size := int(window / granularity)
+	size := int64(window / granularity)
 
 	t := &rollingWindow{
 		window:      window,
@@ -41,7 +42,7 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 		size:        size,
 		position:    0,
 		values:      make([]float64, size),
-		counters:    make([]int, size),
+		counters:    make([]int64, size),
 		quitC:       make(chan struct{}),
 		close:       false,
 	}
@@ -56,7 +57,7 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 func (r *rollingWindow) cleanBuckets(ticker TimeTicker) {
 	for {
 		select {
-		case <-ticker.Chan():
+		case tick := <-ticker.Chan():
 			r.Lock()
 
 			r.position++
@@ -67,6 +68,8 @@ func (r *rollingWindow) cleanBuckets(ticker TimeTicker) {
 
 			r.values[r.position] = 0
 			r.counters[r.position] = 0
+
+			r.now = tick
 
 			r.Unlock()
 		case <-r.quitC:
@@ -98,12 +101,39 @@ func (r *rollingWindow) Add(value float64) {
 	r.values[r.position] += value
 }
 
+// AddWithTime takes a value and timestamp and adds it into the correct position.
+// The operation is ignored if the timestamp is older than the window size.
+func (r *rollingWindow) AddWithTime(value float64, t time.Time) {
+	r.Lock()
+	defer r.Unlock()
+
+	if r.close {
+		return
+	}
+
+	// Compare transaction timestamp with current time - window in seconds
+	// if it is older, exit function.
+	if t.Unix() < r.now.Add(-r.window).Unix() {
+		return
+	}
+
+	diff := r.now.Unix() - t.Unix()
+	tpos := r.position - diff
+	if tpos < 0 {
+		tpos = r.size + tpos
+	}
+
+	r.counters[tpos]++
+	r.values[tpos] += value
+}
+
 // Count returns the total number of transactions in the rolling window
-func (r *rollingWindow) Count() int {
+func (r *rollingWindow) Count() int64 {
 	r.RLock()
 	defer r.RUnlock()
 
-	total := 0
+	var total int64
+	total = 0
 
 	for _, v := range r.counters {
 		total += v
