@@ -115,6 +115,55 @@ func TestRollingWindow_WithTime(t *testing.T) {
 	assert.Equal(t, 0.0, rw.Min())
 	assert.Equal(t, 54.0, rw.Average())
 }
+func TestRollingWindow_AverageSince(t *testing.T) {
+	rw := &rollingWindow{
+		window:      6 * time.Second,
+		granularity: time.Second,
+		size:        6,
+		values: []float64{
+			0, 10, -20, 120, 10, 30,
+		},
+		counters: make([]int64, 5),
+	}
+
+	rw.position = 5
+
+	_, err := rw.AverageSince(1 * time.Hour)
+	assert.NotNil(t, err)
+
+	avg, err := rw.AverageSince(6 * time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, 25.0, avg)
+
+	avg, err = rw.AverageSince(3 * time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, 53.333333333333336, avg)
+
+	avg, err = rw.AverageSince(5 * time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, 30.0, avg)
+
+	rw.position = 3
+
+	avg, err = rw.AverageSince(6 * time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, 25.0, avg)
+
+	avg, err = rw.AverageSince(2 * time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, 50.0, avg)
+
+	rw.position = 0
+
+	avg, err = rw.AverageSince(6 * time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, 25.0, avg)
+
+	avg, err = rw.AverageSince(2 * time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, 15.0, avg)
+}
+
 func TestRollingWindow_MaxMin(t *testing.T) {
 	rw := &rollingWindow{
 		values: []float64{

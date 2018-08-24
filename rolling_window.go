@@ -1,10 +1,13 @@
 package horus
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 )
+
+var ErrWrongWindowSize = errors.New("specified window must be equal or less than total window")
 
 type rollingWindow struct {
 	sync.RWMutex
@@ -158,6 +161,32 @@ func (r *rollingWindow) Average() float64 {
 	}
 
 	return total / float64(r.size)
+}
+
+// AverageSince calculates the average in the given window
+func (r *rollingWindow) AverageSince(w time.Duration) (float64, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	if w > r.window {
+		return 0, ErrWrongWindowSize
+	}
+
+	sum := 0.0
+	count := 0.0
+	windowSize := int64(w / r.granularity)
+
+	for i := int64(0); i < windowSize; i++ {
+		pos := r.position - i
+		if pos < 0 {
+			pos += int64(len(r.values))
+		}
+
+		sum += r.values[pos]
+		count++
+	}
+
+	return sum / count, nil
 }
 
 // Max returns the max value in the given rolling window.
