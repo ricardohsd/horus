@@ -13,8 +13,8 @@ type rollingWindow struct {
 	sync.RWMutex
 	window      time.Duration
 	granularity time.Duration
-	size        int64
-	position    int64
+	size        int
+	position    int
 	now         time.Time
 	values      []float64
 	counters    []int64
@@ -37,7 +37,7 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 		return nil, fmt.Errorf("window must be a multiplier of granularity")
 	}
 
-	size := int64(window / granularity)
+	size := int(window / granularity)
 
 	t := &rollingWindow{
 		window:      window,
@@ -120,7 +120,7 @@ func (r *rollingWindow) AddWithTime(value float64, t time.Time) {
 		return
 	}
 
-	diff := r.now.Unix() - t.Unix()
+	diff := int(r.now.Unix() - t.Unix())
 	tpos := r.position - diff
 	if tpos < 0 {
 		tpos = r.size + tpos
@@ -174,12 +174,12 @@ func (r *rollingWindow) AverageSince(w time.Duration) (float64, error) {
 
 	sum := 0.0
 	count := 0.0
-	windowSize := int64(w / r.granularity)
+	windowSize := int(w / r.granularity)
 
-	for i := int64(0); i < windowSize; i++ {
+	for i := 0; i < windowSize; i++ {
 		pos := r.position - i
 		if pos < 0 {
-			pos += int64(len(r.values))
+			pos += len(r.values)
 		}
 
 		sum += r.values[pos]
