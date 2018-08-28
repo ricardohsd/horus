@@ -19,7 +19,7 @@ func TestRollingWindow_Errors(t *testing.T) {
 }
 
 func TestRollingWindow(t *testing.T) {
-	rw := &rollingWindow{
+	rw := &RollingWindow{
 		window:      10 * time.Second,
 		granularity: time.Second,
 		size:        10,
@@ -74,7 +74,7 @@ func TestRollingWindow(t *testing.T) {
 }
 
 func TestRollingWindow_WithTime(t *testing.T) {
-	rw := &rollingWindow{
+	rw := &RollingWindow{
 		window:      10 * time.Second,
 		granularity: time.Second,
 		size:        10,
@@ -116,7 +116,7 @@ func TestRollingWindow_WithTime(t *testing.T) {
 	assert.Equal(t, 54.0, rw.Average())
 }
 func TestRollingWindow_AverageSince(t *testing.T) {
-	rw := &rollingWindow{
+	rw := &RollingWindow{
 		window:      6 * time.Second,
 		granularity: time.Second,
 		size:        6,
@@ -165,7 +165,7 @@ func TestRollingWindow_AverageSince(t *testing.T) {
 }
 
 func TestRollingWindow_MaxMin(t *testing.T) {
-	rw := &rollingWindow{
+	rw := &RollingWindow{
 		values: []float64{
 			0, 10, -20, 150, 0, 30,
 		},
@@ -176,7 +176,7 @@ func TestRollingWindow_MaxMin(t *testing.T) {
 }
 
 func TestRollingWindow_quit(t *testing.T) {
-	rw := &rollingWindow{
+	rw := &RollingWindow{
 		window:      5 * time.Second,
 		granularity: 1 * time.Second,
 		size:        5,

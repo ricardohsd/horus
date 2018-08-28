@@ -2,8 +2,8 @@ package horus
 
 import "fmt"
 
-// sWindow defines attributes for a fixed slide window
-type sWindow struct {
+// SWindow defines attributes for a fixed slide window
+type SWindow struct {
 	window int
 	values []float64
 }
@@ -11,22 +11,22 @@ type sWindow struct {
 // NewSWindow provides a fixed slide window operation that
 // exposes average, max and min statistics.
 // The given window must be an integer higher than 0.
-func NewSWindow(window int) (*sWindow, error) {
+func NewSWindow(window int) (*SWindow, error) {
 	if window == 0 {
 		return nil, fmt.Errorf("window must be higher than 0")
 	}
 
-	return &sWindow{
+	return &SWindow{
 		window: window,
 		values: make([]float64, window),
 	}, nil
 }
 
-func (s *sWindow) Add(value float64) {
+func (s *SWindow) Add(value float64) {
 	s.values = append(s.values[1:s.window], value)
 }
 
-func (s *sWindow) Average() float64 {
+func (s *SWindow) Average() float64 {
 	avg := 0.0
 
 	for _, v := range s.values {
@@ -36,7 +36,7 @@ func (s *sWindow) Average() float64 {
 	return avg / float64(s.window)
 }
 
-func (s *sWindow) Max() float64 {
+func (s *SWindow) Max() float64 {
 	max := s.values[0]
 
 	for _, v := range s.values {
@@ -48,7 +48,7 @@ func (s *sWindow) Max() float64 {
 	return max
 }
 
-func (s *sWindow) Min() float64 {
+func (s *SWindow) Min() float64 {
 	min := s.values[0]
 
 	for _, v := range s.values {

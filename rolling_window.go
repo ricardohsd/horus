@@ -9,7 +9,7 @@ import (
 
 var ErrWrongWindowSize = errors.New("specified window must be equal or less than total window")
 
-type rollingWindow struct {
+type RollingWindow struct {
 	sync.RWMutex
 	window      time.Duration
 	granularity time.Duration
@@ -24,7 +24,7 @@ type rollingWindow struct {
 
 // NewRWindow provides a slide window operation for a moving average in a rolling window.
 // The given window must be in a valid time.Duration higher than 0.
-func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow, error) {
+func NewRWindow(window time.Duration, granularity time.Duration) (*RollingWindow, error) {
 	if window == 0 {
 		return nil, fmt.Errorf("window must be higher than 0")
 	}
@@ -39,7 +39,7 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 
 	size := int(window / granularity)
 
-	t := &rollingWindow{
+	t := &RollingWindow{
 		window:      window,
 		granularity: granularity,
 		size:        size,
@@ -57,7 +57,7 @@ func NewRWindow(window time.Duration, granularity time.Duration) (*rollingWindow
 	return t, nil
 }
 
-func (r *rollingWindow) cleanBuckets(ticker TimeTicker) {
+func (r *RollingWindow) cleanBuckets(ticker TimeTicker) {
 	for {
 		select {
 		case tick := <-ticker.Chan():
@@ -82,7 +82,7 @@ func (r *rollingWindow) cleanBuckets(ticker TimeTicker) {
 	}
 }
 
-func (r *rollingWindow) Stop() {
+func (r *RollingWindow) Stop() {
 	r.Lock()
 	defer r.Unlock()
 
@@ -92,7 +92,7 @@ func (r *rollingWindow) Stop() {
 
 // Add adds a value to its given position in the rolling window.
 // The given value is incremented with the position's value.
-func (r *rollingWindow) Add(value float64) {
+func (r *RollingWindow) Add(value float64) {
 	r.Lock()
 	defer r.Unlock()
 
@@ -106,7 +106,7 @@ func (r *rollingWindow) Add(value float64) {
 
 // AddWithTime takes a value and timestamp and adds it into the correct position.
 // The operation is ignored if the timestamp is older than the window size.
-func (r *rollingWindow) AddWithTime(value float64, t time.Time) {
+func (r *RollingWindow) AddWithTime(value float64, t time.Time) {
 	r.Lock()
 	defer r.Unlock()
 
@@ -131,7 +131,7 @@ func (r *rollingWindow) AddWithTime(value float64, t time.Time) {
 }
 
 // Count returns the total number of transactions in the rolling window
-func (r *rollingWindow) Count() int64 {
+func (r *RollingWindow) Count() int64 {
 	r.RLock()
 	defer r.RUnlock()
 
@@ -146,7 +146,7 @@ func (r *rollingWindow) Count() int64 {
 }
 
 // Average calculates the average inside rolling window.
-func (r *rollingWindow) Average() float64 {
+func (r *RollingWindow) Average() float64 {
 	r.RLock()
 	defer r.RUnlock()
 
@@ -164,7 +164,7 @@ func (r *rollingWindow) Average() float64 {
 }
 
 // AverageSince calculates the average in the given window
-func (r *rollingWindow) AverageSince(w time.Duration) (float64, error) {
+func (r *RollingWindow) AverageSince(w time.Duration) (float64, error) {
 	r.RLock()
 	defer r.RUnlock()
 
@@ -190,7 +190,7 @@ func (r *rollingWindow) AverageSince(w time.Duration) (float64, error) {
 }
 
 // Max returns the max value in the given rolling window.
-func (r *rollingWindow) Max() float64 {
+func (r *RollingWindow) Max() float64 {
 	r.RLock()
 	defer r.RUnlock()
 
@@ -206,7 +206,7 @@ func (r *rollingWindow) Max() float64 {
 }
 
 // Min returns the min value in the given rolling window.
-func (r *rollingWindow) Min() float64 {
+func (r *RollingWindow) Min() float64 {
 	r.RLock()
 	defer r.RUnlock()
 
